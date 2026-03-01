@@ -6,24 +6,30 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title CertificateRegistry
- * @dev Optimized registry for blockchain-based certificate verification.
+ * @dev Optimized registry for blockchain-based structured certificate verification.
  */
 contract CertificateRegistry is AccessControl, ReentrancyGuard {
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
 
     struct Certificate {
         bytes32 docHash;
-        string metadataUrl; // IPFS link
-        address issuer;
+        string studentName;
+        string courseName;
+        string issueDate;
+        string issuerName;
+        address issuerAddress;
         uint256 timestamp;
-        bool isRevoked;
         bool exists;
     }
 
     mapping(bytes32 => Certificate) private certificates;
 
-    event CertificateIssued(bytes32 indexed docHash, address indexed issuer, string metadataUrl);
-    event CertificateRevoked(bytes32 indexed docHash, address indexed revoker);
+    event CertificateIssued(
+        bytes32 indexed docHash, 
+        string studentName, 
+        string courseName, 
+        address indexed issuerAddress
+    );
 
     constructor(address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -31,67 +37,75 @@ contract CertificateRegistry is AccessControl, ReentrancyGuard {
     }
 
     /**
-     * @dev Issue a new certificate hash.
-     * @param _docHash SHA-256 hash of the certificate.
-     * @param _metadataUrl URL to metadata on IPFS.
+     * @dev Generate a deterministic hash for structured certificate data.
      */
-    function issueCertificate(bytes32 _docHash, string calldata _metadataUrl) 
-        external 
-        onlyRole(ISSUER_ROLE) 
-    {
-        require(!certificates[_docHash].exists, "Certificate already exists");
+    function generateHash(
+        string memory _studentName,
+        string memory _courseName,
+        string memory _issueDate,
+        string memory _issuerName
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encode(_studentName, _courseName, _issueDate, _issuerName));
+    }
+
+    /**
+     * @dev Issue a new certificate based on structured data.
+     * @param _studentName Name of the student.
+     * @param _courseName Name of the course.
+     * @param _issueDate Date of issuance.
+     * @param _issuerName Name of the issuing entity.
+     */
+    function issueCertificate(
+        string calldata _studentName,
+        string calldata _courseName,
+        string calldata _issueDate,
+        string calldata _issuerName
+    ) external onlyRole(ISSUER_ROLE) {
+        bytes32 docHash = generateHash(_studentName, _courseName, _issueDate, _issuerName);
         
-        certificates[_docHash] = Certificate({
-            docHash: _docHash,
-            metadataUrl: _metadataUrl,
-            issuer: msg.sender,
+        require(!certificates[docHash].exists, "Certificate already exists");
+        
+        certificates[docHash] = Certificate({
+            docHash: docHash,
+            studentName: _studentName,
+            courseName: _courseName,
+            issueDate: _issueDate,
+            issuerName: _issuerName,
+            issuerAddress: msg.sender,
             timestamp: block.timestamp,
-            isRevoked: false,
             exists: true
         });
 
-        emit CertificateIssued(_docHash, msg.sender, _metadataUrl);
+        emit CertificateIssued(docHash, _studentName, _courseName, msg.sender);
     }
 
     /**
-     * @dev Revoke an existing certificate.
-     * @param _docHash Hash of the certificate to revoke.
+     * @dev Verify a certificate by providing its structured data.
      */
-    function revokeCertificate(bytes32 _docHash) 
-        external 
-        onlyRole(DEFAULT_ADMIN_ROLE) 
-    {
-        require(certificates[_docHash].exists, "Certificate does not exist");
-        require(!certificates[_docHash].isRevoked, "Already revoked");
-
-        certificates[_docHash].isRevoked = true;
-        emit CertificateRevoked(_docHash, msg.sender);
-    }
-
-    /**
-     * @dev Verify a certificate hash.
-     * @param _docHash Hash to verify.
-     * @return isValid Whether the certificate is valid (exists and not revoked).
-     * @return metadataUrl The associated metadata URL.
-     * @return issuer The address that issued it.
-     * @return timestamp The time of issuance.
-     */
-    function verifyCertificate(bytes32 _docHash) 
-        external 
-        view 
-        returns (bool isValid, string memory metadataUrl, address issuer, uint256 timestamp) 
-    {
-        Certificate memory cert = certificates[_docHash];
-        if (!cert.exists || cert.isRevoked) {
-            return (false, "", address(0), 0);
+    function verifyCertificate(
+        string calldata _studentName,
+        string calldata _courseName,
+        string calldata _issueDate,
+        string calldata _issuerName
+    ) external view returns (
+        bool isValid,
+        address issuerAddress,
+        uint256 timestamp
+    ) {
+        bytes32 docHash = generateHash(_studentName, _courseName, _issueDate, _issuerName);
+        Certificate memory cert = certificates[docHash];
+        
+        if (!cert.exists) {
+            return (false, address(0), 0);
         }
-        return (true, cert.metadataUrl, cert.issuer, cert.timestamp);
+        
+        return (true, cert.issuerAddress, cert.timestamp);
     }
 
     /**
-     * @dev Check if a hash is registered (regardless of revocation).
+     * @dev Check if a specific hash exists in the registry.
      */
-    function isRegistered(bytes32 _docHash) external view returns (bool) {
+    function hashExists(bytes32 _docHash) external view returns (bool) {
         return certificates[_docHash].exists;
     }
 }

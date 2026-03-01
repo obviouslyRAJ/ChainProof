@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+export const CONTRACT_ADDRESS = "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9";
 
 export const CONTRACT_ABI = [
     {
@@ -22,39 +22,60 @@ export const CONTRACT_ABI = [
                 "type": "bytes32"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "issuer",
-                "type": "address"
+                "indexed": false,
+                "internalType": "string",
+                "name": "studentName",
+                "type": "string"
             },
             {
                 "indexed": false,
                 "internalType": "string",
-                "name": "metadataUrl",
+                "name": "courseName",
                 "type": "string"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "issuerAddress",
+                "type": "address"
             }
         ],
         "name": "CertificateIssued",
         "type": "event"
     },
     {
-        "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
-                "internalType": "bytes32",
-                "name": "docHash",
-                "type": "bytes32"
+                "internalType": "string",
+                "name": "_studentName",
+                "type": "string"
             },
             {
-                "indexed": true,
-                "internalType": "address",
-                "name": "revoker",
-                "type": "address"
+                "internalType": "string",
+                "name": "_courseName",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issueDate",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issuerName",
+                "type": "string"
             }
         ],
-        "name": "CertificateRevoked",
-        "type": "event"
+        "name": "generateHash",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
     },
     {
         "inputs": [
@@ -64,7 +85,7 @@ export const CONTRACT_ABI = [
                 "type": "bytes32"
             }
         ],
-        "name": "isRegistered",
+        "name": "hashExists",
         "outputs": [
             {
                 "internalType": "bool",
@@ -78,13 +99,23 @@ export const CONTRACT_ABI = [
     {
         "inputs": [
             {
-                "internalType": "bytes32",
-                "name": "_docHash",
-                "type": "bytes32"
+                "internalType": "string",
+                "name": "_studentName",
+                "type": "string"
             },
             {
                 "internalType": "string",
-                "name": "_metadataUrl",
+                "name": "_courseName",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issueDate",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issuerName",
                 "type": "string"
             }
         ],
@@ -96,22 +127,24 @@ export const CONTRACT_ABI = [
     {
         "inputs": [
             {
-                "internalType": "bytes32",
-                "name": "_docHash",
-                "type": "bytes32"
-            }
-        ],
-        "name": "revokeCertificate",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
+                "internalType": "string",
+                "name": "_studentName",
+                "type": "string"
+            },
             {
-                "internalType": "bytes32",
-                "name": "_docHash",
-                "type": "bytes32"
+                "internalType": "string",
+                "name": "_courseName",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issueDate",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "_issuerName",
+                "type": "string"
             }
         ],
         "name": "verifyCertificate",
@@ -122,19 +155,45 @@ export const CONTRACT_ABI = [
                 "type": "bool"
             },
             {
-                "internalType": "string",
-                "name": "metadataUrl",
-                "type": "string"
-            },
-            {
                 "internalType": "address",
-                "name": "issuer",
+                "name": "issuerAddress",
                 "type": "address"
             },
             {
                 "internalType": "uint256",
                 "name": "timestamp",
                 "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            },
+            {
+                "internalType": "bytes32",
+                "name": "role",
+                "type": "bytes32"
+            }
+        ],
+        "name": "grantRole",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "ISSUER_ROLE",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
             }
         ],
         "stateMutability": "view",
