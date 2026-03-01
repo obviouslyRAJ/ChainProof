@@ -1,56 +1,68 @@
 "use client";
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-// Shared mouse position (normalized -1 to 1)
-const mouse = { x: 0, y: 0 };
+// Accumulated mouse delta between frames
+const pendingDelta = { x: 0, y: 0 };
 
-function BlockchainCube() {
-    const meshRef = useRef<THREE.Mesh>(null);
-    const wireRef = useRef<THREE.Mesh>(null);
+function NetworkSphere() {
+    const groupRef = useRef<THREE.Group>(null);
+
+    // Icosahedron with detail=2 gives a nice geodesic sphere (like the reference image)
+    const icoGeo = useMemo(() => new THREE.IcosahedronGeometry(2, 2), []);
+
+    // Edges wireframe from the icosahedron faces
+    const edgesGeo = useMemo(() => new THREE.EdgesGeometry(icoGeo), [icoGeo]);
+
+    // Unique vertex positions for node dots
+    const nodePositions = useMemo(() => {
+        const pos = icoGeo.attributes.position;
+        const seen = new Map<string, THREE.Vector3>();
+        for (let i = 0; i < pos.count; i++) {
+            const v = new THREE.Vector3(
+                parseFloat(pos.getX(i).toFixed(4)),
+                parseFloat(pos.getY(i).toFixed(4)),
+                parseFloat(pos.getZ(i).toFixed(4))
+            );
+            const key = `${v.x},${v.y},${v.z}`;
+            if (!seen.has(key)) seen.set(key, v);
+        }
+        return Array.from(seen.values());
+    }, [icoGeo]);
 
     useFrame(() => {
-        if (!meshRef.current || !wireRef.current) return;
+        if (!groupRef.current) return;
 
-        const targetX = -mouse.y * Math.PI * 0.55;
-        const targetY = -mouse.x * Math.PI * 0.55;
+        // Apply accumulated delta and immediately reset — stops when cursor stops
+        groupRef.current.rotation.x += pendingDelta.y * 0.002;
+        groupRef.current.rotation.y += pendingDelta.x * 0.002;
 
-        meshRef.current.rotation.x = THREE.MathUtils.lerp(
-            meshRef.current.rotation.x,
-            targetX,
-            0.07
-        );
-        meshRef.current.rotation.y = THREE.MathUtils.lerp(
-            meshRef.current.rotation.y,
-            targetY,
-            0.07
-        );
-
-        wireRef.current.rotation.x = meshRef.current.rotation.x;
-        wireRef.current.rotation.y = meshRef.current.rotation.y;
+        pendingDelta.x = 0;
+        pendingDelta.y = 0;
     });
 
     return (
-        <group>
-            {/* Perfect solid cube — equal sides */}
-            <mesh ref={meshRef}>
-                <boxGeometry args={[1.8, 1.8, 1.8]} />
-                <meshStandardMaterial
-                    color="#3b5fd9"
-                    emissive="#1a3baa"
-                    emissiveIntensity={0.5}
-                    roughness={0.15}
-                    metalness={0.6}
-                />
-            </mesh>
+        <group ref={groupRef}>
+            {/* Connecting edges */}
+            <lineSegments geometry={edgesGeo}>
+                <lineBasicMaterial color="#29b6f6" transparent opacity={0.85} linewidth={1} />
+            </lineSegments>
 
-            {/* Wireframe overlay */}
-            <mesh ref={wireRef}>
-                <boxGeometry args={[1.82, 1.82, 1.82]} />
-                <meshBasicMaterial color="#60a5fa" wireframe transparent opacity={0.3} />
-            </mesh>
+            {/* Nodes (dots) at every vertex */}
+            {nodePositions.map((v, i) => (
+                <mesh key={i} position={v}>
+                    <sphereGeometry args={[0.1, 12, 12]} />
+                    <meshStandardMaterial
+                        color="#29b6f6"
+                        emissive="#0d47a1"
+                        emissiveIntensity={0.6}
+                        roughness={0.2}
+                        metalness={0.5}
+                    />
+                </mesh>
+            ))}
         </group>
     );
 }
@@ -58,22 +70,21 @@ function BlockchainCube() {
 export default function Scene3D() {
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -((e.clientY / window.innerHeight) * 2 - 1);
+            // Accumulate raw pixel deltas — direction follows cursor naturally
+            pendingDelta.x += e.movementX;
+            pendingDelta.y += e.movementY;
         };
         window.addEventListener('mousemove', handleMouseMove);
         return () => window.removeEventListener('mousemove', handleMouseMove);
     }, []);
 
     return (
-        <div className="absolute inset-0 z-0 opacity-60">
-            {/* Low FOV (40°) + camera pulled back = minimal perspective distortion */}
-            <Canvas camera={{ position: [0, 0, 7], fov: 40 }}>
-                <ambientLight intensity={0.6} />
-                <pointLight position={[8, 8, 8]} intensity={1.5} color="#3b82f6" />
-                <pointLight position={[-8, -8, -8]} intensity={0.6} color="#1d4ed8" />
-                <directionalLight position={[0, 5, 5]} intensity={0.8} color="#93c5fd" />
-                <BlockchainCube />
+        <div className="absolute inset-0 z-0 opacity-70">
+            <Canvas camera={{ position: [0, 0, 7], fov: 45 }}>
+                <ambientLight intensity={0.5} />
+                <pointLight position={[10, 10, 10]} intensity={1.2} color="#29b6f6" />
+                <pointLight position={[-10, -10, -10]} intensity={0.5} color="#0d47a1" />
+                <NetworkSphere />
             </Canvas>
         </div>
     );
