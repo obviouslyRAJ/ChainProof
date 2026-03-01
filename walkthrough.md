@@ -1,75 +1,46 @@
-# ChainProof Lite - Final Walkthrough
+# ChainProof Lite: Structured Data Hashing Refactor
 
-ChainProof Lite is a production-ready certificate verification system built for the Polygon blockchain. It combines SHA-256 cryptographic hashing with decentralized storage (IPFS) to create an immutable proof-of-authenticity for any digital document.
+ChainProof Lite has been successfully refactored from file-based hashing to **Deterministic Structured Data Hashing**. This ensures that certificate authenticity is tied to its core information (name, course, date) rather than a specific file binary, making it much more robust against metadata changes.
 
-## 🏗️ Project Architecture
+## ✨ Key Improvements
 
-```mermaid
-graph TD
-    A[Admin/Issuer] -->|Upload PDF| B[Next.js API]
-    B -->|Generate SHA-256| C[Hash]
-    B -->|Upload Metadata| D[IPFS]
-    C -->|Store on Chain| E[Polygon Smart Contract]
-    F[Verifier/User] -->|Upload PDF| G[Verification Portal]
-    G -->|Client-side Hashing| H[Query Contract]
-    H -->|Match?| I{Result}
-    I -->|Yes| J[Verified ✅]
-    I -->|No| K[Tampered ❌]
-```
+### 1. Unified Blockchain Workspace
+Both Issuing and Verification are now consolidated into a single, high-performance workspace on the home page.
 
-## 🛡️ Security & Advanced Features
+![Verify Credential Tab](file:///Users/rajgurjar/.gemini/antigravity/brain/15abe50f-f40a-45b4-bf08-ec557291bd61/verify_credential_tab_1772363493081.png)
+*The new 'Verify' tab allows users to re-compute cryptographic proofs by entering record details.*
 
-### 1. Fake Upload Prevention
-We implemented **Role-Based Access Control (RBAC)** using OpenZeppelin's `AccessControl`. Only addresses with the `ISSUER_ROLE` can invoke the `issueCertificate` function.
+### 2. Structured Data Hashing (Keccak256)
+We no longer rely on file contents. Instead, we hash the core facts of the certificate using `abi.encode` in Solidity and matching logic in Ethers.js:
+*   **Student Name** (e.g., "John Doe")
+*   **Course Name** (e.g., "Web3 Engineering")
+*   **Issue Date** (e.g., "2026-03-01")
+*   **Issuer Entity** (e.g., "ChainProof University")
 
-### 2. Hash Collision & Replay Attacks
-*   **SHA-256**: Offers extreme collision resistance.
-*   **Uniqueness Check**: The smart contract prevents re-issuing an existing hash, stopping replay attacks where someone might try to re-register a stolen certificate under a new name.
+### 3. Admin-Only Issuance
+The "Issue" tab is protected and requires a valid **ISSUER_ROLE** to etch certificates onto the blockchain.
 
-### 3. Revocation Design
-The contract includes a `revokeCertificate` function. Once revoked, the `verifyCertificate` view will return `isValid: false`, even if the file hash matches. This is critical for expired or invalidated credentials.
+![Issue Certificate Tab](file:///Users/rajgurjar/.gemini/antigravity/brain/15abe50f-f40a-45b4-bf08-ec557291bd61/issue_certificate_tab_1772363499825.png)
+*Admins can now issue certificates directly through a structured form with real-time transaction feedback.*
 
-### 4. Handling Re-exported Certificates
-**The Problem**: If a user re-exports a PDF from Chrome, the binary hash changes due to metadata shifts.
-**The Solution**: We store a `unique_id` in the IPFS metadata. For high-fidelity cases, we can implement "Content Hashing" (hashing only the text/images) instead of the whole file.
+### 🛡️ Role Management (Access Control)
+To prevent unauthorized issuance, only accounts with the `ISSUER_ROLE` can create certificates. 
+*   **Account #0** (Deployer) has this role by default.
+*   **Account #1** (`0x7099...`) has been granted the role for demo purposes.
+*   **To grant to others**: Use the `grantRole` function if you are an admin.
 
-### 5. Scalability for 100,000+ Certificates
-For mass production:
-*   **Merkle Trees**: Instead of storing 100k individual hashes ($$$ gas), we store 1 Merkle Root of 10k certificates in a single transaction (saves 99.99% gas).
+## 🛠️ Technical Details
 
-## 🚀 Demo-Ready Components
+*   **Smart Contract**: [CertificateRegistry.sol](file:///Users/rajgurjar/ChainProof/contracts/CertificateRegistry.sol)
+*   **Contract Address**: `0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9`
+*   **Hashing Utility**: [hashing.ts](file:///Users/rajgurjar/ChainProof/src/lib/hashing.ts)
+*   **Unified UI**: [page.tsx](file:///Users/rajgurjar/ChainProof/src/app/page.tsx)
 
-*   **[Admin Dashboard](file:///Users/rajgurjar/ChainProof/src/app/admin/page.tsx)**: Modern upload & hashing interface.
-*   **[Verification Portal](file:///Users/rajgurjar/ChainProof/src/app/verify/page.tsx)**: Premium trust-focused validation UI.
-*   **[Smart Contract](file:///Users/rajgurjar/ChainProof/contracts/CertificateRegistry.sol)**: Optimized Solidity registry.
+## 🚀 How to Test
+1.  **Connect Wallet**: Click the "Connect Wallet" button in the navigation bar using MetaMask (Localhost 8545).
+2.  **Issue**: Switch to the "Issue" tab, enter student details, and click "Issue Blockchain Proof".
+3.  **Verify**: Switch to the "Verify" tab, enter the *exact same* details, and click "Verify Authenticity".
+4.  **Result**: The system re-computes the hash and confirms its existence on the Polygon blockchain!
 
-## 🛠️ Demo Instructions (Local Environment)
-
-We have optimized the setup for a high-speed local demo using Hardhat.
-
-### ✨ Premium UI Features
-*   **3D Hero Section**: A rotating blockchain cube built with Three.js (React Three Fiber) that reacts to user scroll.
-*   **Interactive Assets**: A floating, glowing certificate card that demonstrates the "On-Chain Verified" state.
-*   **Motion & Parallax**: Smooth entrance animations and parallax scroll effects powered by Framer Motion.
-*   **Dynamic Gradients**: Animated background gradients that create a modern, high-end feel.
-
-### 1. The Infrastructure
-*   **Local Node**: Running on `http://127.0.0.1:8545` (Chain ID: `31337`).
-*   **Smart Contract**: Deployed at `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`.
-
-### 2. Running the Demo
-1.  **Issuer Flow**:
-    - Go to `/admin`.
-    - Connect MetaMask to **Localhost 8545**.
-    - Upload a PDF. It will be hashed and pinned to IPFS.
-    - Click **Finalize on Blockchain** to sign the transaction and store the proof.
-2.  **Verification Flow**:
-    - Go to `/verify`.
-    - Drag and drop the same PDF.
-    - System re-hashes the file and queries the local contract.
-    - **RESULT**: Verified ✅ with issuance date and issuer address!
-
-### 3. Proof of Security (The "Tamper" test)
-- Take the original PDF, open it, add a single dot or space, and save.
-- Upload to `/verify`.
-- **RESULT**: Tampered ❌ (Hash mismatch).
+---
+*Developed for the Next Generation of Trust.*
