@@ -47,9 +47,15 @@ For mass production:
 
 We have optimized the setup for a high-speed local demo using Hardhat.
 
+### ✨ Premium UI Features
+*   **3D Hero Section**: A rotating blockchain cube built with Three.js (React Three Fiber) that reacts to user scroll.
+*   **Interactive Assets**: A floating, glowing certificate card that demonstrates the "On-Chain Verified" state.
+*   **Motion & Parallax**: Smooth entrance animations and parallax scroll effects powered by Framer Motion.
+*   **Dynamic Gradients**: Animated background gradients that create a modern, high-end feel.
+
 ### 1. The Infrastructure
 *   **Local Node**: Running on `http://127.0.0.1:8545` (Chain ID: `31337`).
-*   **Smart Contract**: Deployed at `0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9`.
+*   **Smart Contract**: Deployed at `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`.
 
 ### 2. Running the Demo
 1.  **Issuer Flow**:
