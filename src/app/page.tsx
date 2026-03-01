@@ -56,11 +56,6 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full mb-8">
-              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-              <span className="text-blue-400 text-xs font-bold tracking-widest uppercase">The Future of Credentials</span>
-            </div>
-
             <h1 className="text-6xl md:text-[5.5rem] font-black tracking-tighter mb-8 leading-[0.9] text-white">
               Immutable <br />
               <span className="bg-gradient-to-r from-blue-400 via-emerald-400 to-emerald-500 bg-clip-text text-transparent">Verification.</span>
