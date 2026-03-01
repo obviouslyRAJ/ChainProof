@@ -49,7 +49,7 @@ export default function Home() {
         {/* 3D Scene */}
         <Scene3D />
 
-        <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+        <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
           <motion.div
             style={{ y: y1 }}
             initial={{ opacity: 0, x: -50 }}
@@ -85,11 +85,10 @@ export default function Home() {
 
           {/* Right Column: Floating Assets */}
           <motion.div
-            style={{ y: y2 }}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-            className="hidden lg:flex justify-center items-center relative"
+            className="flex justify-end items-center relative pl-8 self-start sticky top-24"
           >
             <FloatingCard />
 
